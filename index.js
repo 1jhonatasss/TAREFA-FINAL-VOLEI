@@ -193,12 +193,8 @@ app.get("/login",(req, res)=>{
                     .colorgraph {
                     height: 7px;
                     border-top: 0;
-                    background: #c4e17f;
+                    background: #62c2e4;
                     border-radius: 5px;
-                    background-image: -webkit-linear-gradient(left, #c4e17f, #c4e17f 12.5%, #f7fdca 12.5%, #f7fdca 25%, #fecf71 25%, #fecf71 37.5%, #f0776c 37.5%, #f0776c 50%, #db9dbe 50%, #db9dbe 62.5%, #c49cde 62.5%, #c49cde 75%, #669ae1 75%, #669ae1 87.5%, #62c2e4 87.5%, #62c2e4);
-                    background-image: -moz-linear-gradient(left, #c4e17f, #c4e17f 12.5%, #f7fdca 12.5%, #f7fdca 25%, #fecf71 25%, #fecf71 37.5%, #f0776c 37.5%, #f0776c 50%, #db9dbe 50%, #db9dbe 62.5%, #c49cde 62.5%, #c49cde 75%, #669ae1 75%, #669ae1 87.5%, #62c2e4 87.5%, #62c2e4);
-                    background-image: -o-linear-gradient(left, #c4e17f, #c4e17f 12.5%, #f7fdca 12.5%, #f7fdca 25%, #fecf71 25%, #fecf71 37.5%, #f0776c 37.5%, #f0776c 50%, #db9dbe 50%, #db9dbe 62.5%, #c49cde 62.5%, #c49cde 75%, #669ae1 75%, #669ae1 87.5%, #62c2e4 87.5%, #62c2e4);
-                    background-image: linear-gradient(to right, #c4e17f, #c4e17f 12.5%, #f7fdca 12.5%, #f7fdca 25%, #fecf71 25%, #fecf71 37.5%, #f0776c 37.5%, #f0776c 50%, #db9dbe 50%, #db9dbe 62.5%, #c49cde 62.5%, #c49cde 75%, #669ae1 75%, #669ae1 87.5%, #62c2e4 87.5%, #62c2e4);
                     }
                     </style>
                                             <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
@@ -209,13 +205,13 @@ app.get("/login",(req, res)=>{
                         <div class = "container">
                             <div class="wrapper">
                                 <form action="" method="post" name="Login_Form" class="form-signin">       
-                                    <h3 class="form-signin-heading">Welcome Back! Please Sign In</h3>
+                                    <h3 class="form-signin-heading">SEJA BEM-VINDO</h3>
                                     <hr class="colorgraph"><br>
                                     
-                                    <input type="text" class="form-control" name="Username" placeholder="Username" required="" autofocus="" />
+                                    <input type="text" class="form-control" name="Username" placeholder="Usuario" required="" autofocus="" />
                                     <input type="senha" class="form-control" name="Senha" placeholder="Senha" required=""/>     		  
                                     
-                                    <button class="btn btn-lg btn-primary btn-block"  name="Submit" value="Login" type="Submit">Login</button>  			
+                                    <button class="btn btn-lg btn-primary btn-block"  name="Submit" value="Login" type="Submit">Acessar conta</button>  			
                                 </form>			
                             </div>
                         </div>
