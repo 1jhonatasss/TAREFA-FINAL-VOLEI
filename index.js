@@ -33,7 +33,7 @@ app.get("/inicio", (req, res) => {
                                 </li>
                             </ul>
                                 <div class="ms-auto me-4">
-                                    <a class="nav-link active fs-5" style="font-family: 'Dancing Script', cursive;">Dra.ACândido</a>
+                                    <a class="nav-link active fs-5" style="font-family: 'Dancing Script', cursive;">Dra.ACândido ♥</a>
                                 </div>
                         </div>
                     </div>
@@ -167,7 +167,7 @@ app.post("/cadastro", (req, res) => {
                 <p><strong>Razão Social:</strong> ${razao}</p>
                 <p><strong>Email:</strong> ${email}</p>
                 <p><strong>Telefone:</strong> ${telefone}</p>
-                <a href="/" class="btn btn-primary mt-3">Voltar para Início</a>
+                <a href="/inicio" class="btn btn-primary mt-3">Voltar para Início</a>
             </body>
         </html>
     `);
