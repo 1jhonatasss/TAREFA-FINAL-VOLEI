@@ -138,9 +138,9 @@ app.get("/cadastro", (req, res) => {
 });
 
 app.post("/cadastro", (req, res) => {
-    const { nome, sobrenome, instagram, cidade, estado, cnpj, razao, fantasia, email, telefone } = req.body;
+    const { nome, sobrenome, instagram, cidade, estado, cnpj, razao, email, telefone } = req.body;
 
-    if (!nome || !sobrenome || !instagram || !cidade || !estado || !cnpj || !razao || !fantasia || !email || !telefone) {
+    if (!nome || !sobrenome || !instagram || !cidade || !estado || !cnpj || !razao || !email || !telefone) {
         return res.send(`
             <html>
                 <head><meta charset="UTF-8"><title>Erro</title></head>
@@ -153,7 +153,7 @@ app.post("/cadastro", (req, res) => {
         `);
     }
 
-    listaUsuarios.push({ nome, sobrenome, instagram, cidade, estado, cnpj, razao, fantasia, email, telefone });
+    listaUsuarios.push({ nome, sobrenome, instagram, cidade, estado, cnpj, razao, email, telefone });
 
     res.send(`
         <html lang="pt-br">
