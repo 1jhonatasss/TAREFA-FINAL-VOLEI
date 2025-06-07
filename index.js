@@ -340,7 +340,6 @@ app.get("/produtos", verificarAutenticacao, (req, res) => {
 app.post("/produtos", verificarAutenticacao, (req, res) => {
     const { codigoBarras, descricao, precoCusto, precoVenda, dataValidade, quantidade, fabricante } = req.body;
 
-    // Atualiza o cookie do último acesso
     res.cookie('ultimoAcesso', new Date().toLocaleString(), { maxAge: 900000 });
 
     listaProdutos.push({
