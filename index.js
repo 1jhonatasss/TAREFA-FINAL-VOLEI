@@ -8,6 +8,8 @@ const host = "0.0.0.0";
 const port = 3000;
 let listaUsuarios = [];
 let listaProdutos = []; 
+let listaJogadores = [];
+let listaTimes = [];
 
 var logado = false;
 
@@ -25,7 +27,13 @@ app.use(session({
     }
 }));
 
-const listaJogadores = [];
+function formatarTelefone(numero) {
+    if (!numero) return 'Não informado';
+    const ddd = numero.substring(0, 2);
+    const parte1 = numero.substring(2, 6);
+    const parte2 = numero.substring(6);
+    return `(${ddd}) ${parte1}-${parte2}`;
+}
 
 app.get("/", (req, res) => {
     res.send(
@@ -219,6 +227,11 @@ app.get("/", (req, res) => {
                                             <i class="fas fa-users"></i> Lista de Jogadores
                                         </a>
                                     </div>
+                                    <div class="menu-item">
+    <a href="/jogadores-por-time">
+        <i class="fas fa-layer-group"></i> Jogadores por Time
+    </a>
+</div>
                                 </div>
                             </div>
                         </div>
@@ -234,7 +247,7 @@ app.get("/", (req, res) => {
 
 
 
-app.get("/cadastro-jogador", (req, res) => {
+app.get("/cadastro-jogador", verificarAutenticacao, (req, res) => {
     res.send(`
         <html lang="pt-br">
             <head>
@@ -318,9 +331,13 @@ app.get("/cadastro-jogador", (req, res) => {
                                     </div>
                                     
                                     <div class="col-12">
-                                        <label for="equipe" class="form-label required-field">Equipe</label>
-                                        <input type="text" class="form-control" id="equipe" name="equipe" required>
-                                        <div class="invalid-feedback">Informe o nome da equipe.</div>
+                                        <label for="equipe" class="form-label required-field">Time</label>
+                                        <select class="form-select" id="equipe" name="equipe" required>
+                                            <option value="" selected disabled>Selecione o time</option>
+                                            ${listaTimes.map(time => `<option value="${time.nomeEquipe}">${time.nomeEquipe}</option>`).join('')}
+                                            <option value="Sem time">Sem time</option>
+                                        </select>
+                                        <div class="invalid-feedback">Selecione o time.</div>
                                     </div>
                                     
                                     <div class="col-12 mt-4">
@@ -352,7 +369,7 @@ app.get("/cadastro-jogador", (req, res) => {
                         })
                     })()
                     
-                    // Máscara para altura (adiciona 'cm' automaticamente)
+                    (adiciona 'cm' automaticamente)
                     document.getElementById('altura').addEventListener('blur', function() {
     const display = document.getElementById('altura-display');
     if (this.value && !isNaN(this.value)) {
@@ -468,6 +485,179 @@ app.use((req, res, next) => {
     next();
 });
 
+app.get("/cadastro-time", verificarAutenticacao,  (req, res) => {
+    res.send(`
+        <html lang="pt-br">
+            <head>
+                <meta charset="UTF-8">
+                <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css" rel="stylesheet">
+                <title>Cadastro de Time</title>
+                <style>
+                    .form-section {
+                        background-color: #f8f9fa;
+                        border-radius: 10px;
+                        padding: 2rem;
+                        box-shadow: 0 0 15px rgba(0,0,0,0.1);
+                    }
+                    .form-title {
+                        color: #2c3e50;
+                        border-bottom: 2px solid #3498db;
+                        padding-bottom: 0.5rem;
+                        margin-bottom: 1.5rem;
+                    }
+                    .required-field::after {
+                        content: " *";
+                        color: red;
+                    }
+                </style>
+            </head>
+            <body class="bg-light">
+                <div class="container py-5">
+                    <div class="row justify-content-center">
+                        <div class="col-lg-8">
+                            <div class="form-section">
+                                <form class="row g-3 needs-validation" novalidate method="POST" action="/cadastro-time">
+                                    <h2 class="form-title text-center">CADASTRO DE TIME</h2>
+                                    
+                                    <div class="col-12">
+                                        <label for="nomeEquipe" class="form-label required-field">Nome da Equipe</label>
+                                        <input type="text" class="form-control" id="nomeEquipe" name="nomeEquipe" required>
+                                        <div class="invalid-feedback">Por favor, informe o nome da equipe.</div>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <label for="tecnico" class="form-label required-field">Técnico Responsável</label>
+                                        <input type="text" class="form-control" id="tecnico" name="tecnico" required>
+                                        <div class="invalid-feedback">Informe o nome do técnico.</div>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <label for="telefone" class="form-label required-field">Telefone do Técnico</label>
+                                        <input type="tel" class="form-control" id="telefone" name="telefone" pattern="[0-9]{10,11}" required>
+                                        <div class="invalid-feedback">Informe um telefone válido (DDD + número).</div>
+                                    </div>
+                                    
+                                    <div class="col-12 mt-4">
+                                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                            <a href="/" class="btn btn-secondary me-md-2">Cancelar</a>
+                                            <button class="btn btn-primary" type="submit">Cadastrar Time</button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"></script>
+                <script>
+                    // Validação do formulário
+                    (() => {
+                        'use strict'
+                        const forms = document.querySelectorAll('.needs-validation')
+                        Array.from(forms).forEach(form => {
+                            form.addEventListener('submit', event => {
+                                if (!form.checkValidity()) {
+                                    event.preventDefault()
+                                    event.stopPropagation()
+                                }
+                                form.classList.add('was-validated')
+                            }, false)
+                        })
+                    })()
+                    
+                    // Máscara para telefone
+                    document.getElementById('telefone').addEventListener('input', function() {
+                        this.value = this.value.replace(/\D/g, '');
+                    });
+                </script>
+            </body>
+        </html>
+    `);
+});
+
+app.post("/cadastro-time", (req, res) => {
+    const { nomeEquipe, tecnico, telefone } = req.body;
+
+    // Validação no servidor
+    const errors = [];
+    if (!nomeEquipe || nomeEquipe.length < 3) errors.push("Nome da equipe deve ter pelo menos 3 caracteres");
+    if (!tecnico || tecnico.length < 3) errors.push("Nome do técnico deve ter pelo menos 3 caracteres");
+    if (!telefone || !/^\d{10,11}$/.test(telefone)) errors.push("Telefone inválido (deve conter DDD + número)");
+    
+    if (errors.length > 0) {
+        return res.status(400).send(`
+            <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css" rel="stylesheet">
+                    <title>Erro no Cadastro</title>
+                </head>
+                <body class="bg-light">
+                    <div class="container py-5">
+                        <div class="alert alert-danger">
+                            <h4 class="alert-heading">Erros no formulário:</h4>
+                            <ul>
+                                ${errors.map(error => `<li>${error}</li>`).join('')}
+                            </ul>
+                            <hr>
+                            <a href="/cadastro-time" class="btn btn-danger">Voltar ao formulário</a>
+                        </div>
+                    </div>
+                </body>
+            </html>
+        `);
+    }
+    
+    // Criar novo time
+    const novoTime = {
+        id: listaTimes.length + 1,
+        nomeEquipe,
+        tecnico,
+        telefone,
+        dataCadastro: new Date().toISOString()
+    };
+    
+    // Adiciona à lista
+    listaTimes.push(novoTime);
+    
+    // Página de sucesso
+    res.send(`
+        <html lang="pt-br">
+            <head>
+                <meta charset="UTF-8">
+                <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css" rel="stylesheet">
+                <title>Cadastro Concluído</title>
+            </head>
+            <body class="bg-light">
+                <div class="container py-5">
+                    <div class="card">
+                        <div class="card-header bg-success text-white">
+                            <h2 class="mb-0">Time Cadastrado com Sucesso!</h2>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Nome da Equipe:</strong> ${nomeEquipe}</p>
+                                    <p><strong>Técnico:</strong> ${tecnico}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Telefone:</strong> ${formatarTelefone(telefone)}</p>
+                                    <p><strong>Data Cadastro:</strong> ${new Date().toLocaleDateString('pt-BR')}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer text-center">
+                            <a href="/cadastro-time" class="btn btn-primary me-2">Novo Cadastro</a>
+                            <a href="/" class="btn btn-secondary">Voltar ao Início</a>
+                        </div>
+                    </div>
+                </div>
+            </body>
+        </html>
+    `);
+});
+
 app.get("/lista-jogadores", (req, res) => {
     res.send(`
         <html lang="pt-br">
@@ -497,7 +687,7 @@ app.get("/lista-jogadores", (req, res) => {
                                     <th>Nome</th>
                                     <th>Número</th>
                                     <th>Posição</th>
-                                    <th>Equipe</th>
+                                    <th>Time</th>
                                     <th>Altura</th>
                                     <th>Ações</th>
                                 </tr>
@@ -525,6 +715,11 @@ app.get("/lista-jogadores", (req, res) => {
                         </table>
                     </div>
                     ` : `
+                    <div class="text-center mb-4">
+    <a href="/jogadores-por-time" class="btn btn-primary me-2">
+        <i class="fas fa-layer-group"></i> Ver Agrupado por Time
+    </a>
+</div>
                     <div class="alert alert-info text-center">
                         <i class="fas fa-info-circle fa-2x mb-3"></i>
                         <h4>Nenhum jogador cadastrado ainda!</h4>
@@ -555,6 +750,229 @@ app.get("/lista-jogadores", (req, res) => {
     `);
 });
 
+app.get("/times", (req, res) => {
+    res.send(`
+        <html lang="pt-br">
+            <head>
+                <meta charset="UTF-8">
+                <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css" rel="stylesheet">
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+                <title>Lista de Times</title>
+                <style>
+                    .table-responsive { max-height: 70vh; overflow-y: auto; }
+                    .table thead th { position: sticky; top: 0; background: white; }
+                </style>
+            </head>
+            <body class="bg-light">
+                <div class="container py-5">
+                    <h1 class="text-center mb-4">
+                        <i class="fas fa-users"></i> Times Cadastrados
+                        <span class="badge bg-primary">${listaTimes.length}</span>
+                    </h1>
+                    
+                    ${listaTimes.length > 0 ? `
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nome da Equipe</th>
+                                    <th>Técnico</th>
+                                    <th>Telefone</th>
+                                    <th>Data Cadastro</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${listaTimes.map(time => `
+                                <tr>
+                                    <td>${time.id}</td>
+                                    <td>${time.nomeEquipe}</td>
+                                    <td>${time.tecnico}</td>
+                                    <td>${formatarTelefone(time.telefone)}</td>
+                                    <td>${new Date(time.dataCadastro).toLocaleDateString('pt-BR')}</td>
+                                    <td>
+                                        <a href="/editar-time/${time.id}" class="btn btn-sm btn-warning">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button class="btn btn-sm btn-danger" onclick="excluirTime(${time.id})">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                    ` : `
+                    <div class="alert alert-info text-center">
+                        <i class="fas fa-info-circle fa-2x mb-3"></i>
+                        <h4>Nenhum time cadastrado ainda!</h4>
+                        <a href="/cadastro-time" class="btn btn-primary mt-3">
+                            <i class="fas fa-plus-circle"></i> Cadastrar Primeiro Time
+                        </a>
+                    </div>
+                    `}
+                    
+                    <div class="text-center mt-4">
+                        <a href="/" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Voltar ao Início
+                        </a>
+                    </div>
+                </div>
+
+                <script>
+                    function excluirTime(id) {
+                        if (confirm('Tem certeza que deseja excluir este time? Todos os jogadores vinculados perderão a referência!')) {
+                            fetch('/excluir-time/' + id, { method: 'DELETE' })
+                                .then(response => window.location.reload())
+                                .catch(error => console.error('Erro:', error));
+                        }
+                    }
+                </script>
+            </body>
+        </html>
+    `);
+});
+
+app.get("/jogadores-por-time", (req, res) => {
+    // Agrupa jogadores por time
+    const jogadoresPorTime = {};
+    
+    listaJogadores.forEach(jogador => {
+        const time = jogador.equipe || "Sem time";
+        if (!jogadoresPorTime[time]) {
+            jogadoresPorTime[time] = [];
+        }
+        jogadoresPorTime[time].push(jogador);
+    });
+
+    // Ordena os times alfabeticamente
+    const timesOrdenados = Object.keys(jogadoresPorTime).sort();
+
+    res.send(`
+        <html lang="pt-br">
+            <head>
+                <meta charset="UTF-8">
+                <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css" rel="stylesheet">
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+                <title>Jogadores por Time</title>
+                <style>
+                    .time-header {
+                        background-color: #2c3e50;
+                        color: white;
+                        padding: 10px 15px;
+                        border-radius: 5px;
+                        margin-top: 20px;
+                        margin-bottom: 10px;
+                        font-weight: bold;
+                    }
+                    .jogador-card {
+                        border-left: 4px solid #3498db;
+                        margin-bottom: 10px;
+                        padding: 10px;
+                        background-color: #f8f9fa;
+                        border-radius: 4px;
+                    }
+                    .badge-posicao {
+                        background-color: #e74c3c;
+                    }
+                    .badge-numero {
+                        background-color: #2ecc71;
+                    }
+                </style>
+            </head>
+            <body class="bg-light">
+                <div class="container py-5">
+                    <h1 class="text-center mb-4">
+                        <i class="fas fa-users"></i> Jogadores Agrupados por Time
+                    </h1>
+                    
+                    <div class="text-center mb-4">
+                        <a href="/lista-jogadores" class="btn btn-secondary me-2">
+                            <i class="fas fa-list"></i> Ver Lista Completa
+                        </a>
+                        <a href="/" class="btn btn-outline-primary">
+                            <i class="fas fa-home"></i> Voltar ao Início
+                        </a>
+                    </div>
+                    
+                    ${timesOrdenados.length > 0 ? `
+                        ${timesOrdenados.map(time => `
+                            <div class="time-header">
+                                <i class="fas fa-users me-2"></i>${time}
+                                <span class="badge bg-primary float-end">${jogadoresPorTime[time].length} jogador(es)</span>
+                            </div>
+                            
+                            ${jogadoresPorTime[time].map(jogador => `
+                                <div class="jogador-card row">
+                                    <div class="col-md-4">
+                                        <strong><i class="fas fa-user me-2"></i>${jogador.nome}</strong>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <span class="badge badge-numero text-white me-2">Nº ${jogador.numero}</span>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <span class="badge badge-posicao text-white">${jogador.posicao}</span>
+                                    </div>
+                                    <div class="col-md-3 text-end">
+                                        <a href="/editar-jogador/${jogador.id}" class="btn btn-sm btn-warning me-1">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button class="btn btn-sm btn-danger" onclick="excluirJogador(${jogador.id})">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        `).join('')}
+                    ` : `
+                        <div class="alert alert-info text-center">
+                            <i class="fas fa-info-circle fa-2x mb-3"></i>
+                            <h4>Nenhum jogador cadastrado ainda!</h4>
+                            <a href="/cadastro-jogador" class="btn btn-primary mt-3">
+                                <i class="fas fa-user-plus"></i> Cadastrar Primeiro Jogador
+                            </a>
+                        </div>
+                    `}
+                </div>
+
+                <script>
+                    function excluirJogador(id) {
+                        if (confirm('Tem certeza que deseja excluir este jogador?')) {
+                            fetch('/excluir-jogador/' + id, { method: 'DELETE' })
+                                .then(response => window.location.reload())
+                                .catch(error => console.error('Erro:', error));
+                        }
+                    }
+                </script>
+            </body>
+        </html>
+    `);
+});
+
+app.delete("/excluir-time/:id", (req, res) => {
+    const id = parseInt(req.params.id);
+    const index = listaTimes.findIndex(t => t.id === id);
+    
+    if (index !== -1) {
+        // Remove o time
+        listaTimes.splice(index, 1);
+        
+        // Remove a referência do time nos jogadores
+        listaJogadores = listaJogadores.map(jogador => {
+            if (jogador.equipe === listaTimes[index]?.nomeEquipe) {
+                return { ...jogador, equipe: "Sem time" };
+            }
+            return jogador;
+        });
+        
+        res.sendStatus(200);
+    } else {
+        res.sendStatus(404);
+    }
+});
+
 app.delete("/excluir-jogador/:id", (req, res) => {
     const id = parseInt(req.params.id);
     const index = listaJogadores.findIndex(j => j.id === id);
@@ -568,235 +986,199 @@ app.delete("/excluir-jogador/:id", (req, res) => {
 });
 
 
-app.get("/produtos", verificarAutenticacao, (req, res) => {
-    res.send(`
-        <html lang="pt-br">
-            <head>
-                <meta charset="UTF-8">
-                <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css" rel="stylesheet">
-                <title>Cadastro de Produtos</title>
-            </head>
-            <body>
-                <div class="container w-75 my-5">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <form class="row g-3 needs-validation border p-4 rounded" novalidate method="POST" action="/produtos">
-                                <fieldset>
-                                    <legend class="text-center fs-4 w-100 mb-4">CADASTRAR PRODUTO</legend>
-                                </fieldset>
-                                <div class="col-md-12">
-                                    <label for="codigoBarras" class="form-label">Código de Barras</label>
-                                    <input type="text" class="form-control" id="codigoBarras" name="codigoBarras" required>
-                                </div>
-                                <div class="col-md-12">
-                                    <label for="descricao" class="form-label">Descrição do Produto</label>
-                                    <input type="text" class="form-control" id="descricao" name="descricao" required>
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="precoCusto" class="form-label">Preço de Custo</label>
-                                    <input type="number" step="0.01" class="form-control" id="precoCusto" name="precoCusto" required>
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="precoVenda" class="form-label">Preço de Venda</label>
-                                    <input type="number" step="0.01" class="form-control" id="precoVenda" name="precoVenda" required>
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="dataValidade" class="form-label">Data de Validade</label>
-                                    <input type="date" class="form-control" id="dataValidade" name="dataValidade" required>
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="quantidade" class="form-label">Quantidade em Estoque</label>
-                                    <input type="number" class="form-control" id="quantidade" name="quantidade" required>
-                                </div>
-                                <div class="col-md-12">
-                                    <label for="fabricante" class="form-label">Fabricante</label>
-                                    <input type="text" class="form-control" id="fabricante" name="fabricante" required>
-                                </div>
-                                <div class="col-12 d-flex justify-content-center gap-3 mt-3">
-                                    <button class="btn btn-primary" type="submit">Cadastrar</button>
-                                    <a href="/" class="btn btn-secondary">Voltar</a>
-                                </div>
-                            </form>
-                        </div>
-                        <div class="col-md-6">
-                            ${renderizarTabelaProdutos()}
-                        </div>
-                    </div>
-                </div>
-                <script>
-                    (() => {
-                        'use strict';
-                        const forms = document.querySelectorAll('.needs-validation');
-                        Array.from(forms).forEach(form => {
-                            form.addEventListener('submit', event => {
-                                if (!form.checkValidity()) {
-                                    event.preventDefault();
-                                    event.stopPropagation();
-                                }
-                                form.classList.add('was-validated');
-                            }, false);
-                        });
-                    })();
-                </script>
-            </body>
-        </html>
-    `);
-
-    function renderizarTabelaProdutos() {
-        if (listaProdutos.length === 0) {
-            return `<div class="alert alert-info">Nenhum produto cadastrado ainda.</div>`;
-        }
-
-        let tabela = `
-            <div class="border p-3 rounded">
-                <h5 class="text-center mb-3">Produtos Cadastrados</h5>
-                <p class="text-muted small">Último acesso: ${req.cookies.ultimoAcesso || 'Nunca'}</p>
-                <div class="table-responsive">
-                    <table class="table table-bordered table-striped table-hover">
-                        <thead class="table-primary">
-                            <tr>
-                                <th>Código</th>
-                                <th>Descrição</th>
-                                <th>Preço Venda</th>
-                                <th>Estoque</th>
-                                <th>Validade</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-        `;
-
-        listaProdutos.forEach(produto => {
-            tabela += `
-                <tr>
-                    <td>${produto.codigoBarras}</td>
-                    <td>${produto.descricao}</td>
-                    <td>R$ ${produto.precoVenda.toFixed(2)}</td>
-                    <td>${produto.quantidade}</td>
-                    <td>${new Date(produto.dataValidade).toLocaleDateString('pt-BR')}</td>
-                </tr>
-            `;
-        });
-
-        tabela += `
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        `;
-
-        return tabela;
-    }
-});
-
-app.post("/produtos", verificarAutenticacao, (req, res) => {
-    const { codigoBarras, descricao, precoCusto, precoVenda, dataValidade, quantidade, fabricante } = req.body;
-
-    res.cookie('ultimoAcesso', new Date().toLocaleString(), { maxAge: 900000 });
-
-    listaProdutos.push({
-        codigoBarras,
-        descricao,
-        precoCusto: parseFloat(precoCusto),
-        precoVenda: parseFloat(precoVenda),
-        dataValidade,
-        quantidade: parseInt(quantidade),
-        fabricante
-    });
-
-    res.redirect("/produtos");
-});
-
-
 app.get("/usuario", (req, res) => {
     res.send(`
-        <style>
-            .page-header {
-                border-bottom: 1px solid #FFFFFF;
-                margin: 20px 0;
-                padding-bottom: 9px;
-                text-align: center;
-            }
-            .form-control {
-                border: 1px solid #D6D6D6;
-                border-radius: 0;
-                box-shadow: none;
-                height: 50px;
-                padding: 6px 15px;
-                font-size: 16px;
-            }
-            body {
-                background-color: #ee7778;
-            }
-            .row {
-                background: #ededed;
-                padding: 30px;
-                max-width: 500px;
-                margin-top: 130px;
-                margin-bottom: 0;
-                border-radius: 8px;
-                box-shadow: 0 0 10px rgba(0,0,0,0.1);
-                position: relative;
-                left: 250px;
-            }
-            legend {
-                border: medium none;
-                color: #7F7F7F;
-                display: block;
-                font-size: 20px;
-                line-height: inherit;
-                margin-bottom: 15px;
-                padding: 0;
-                text-align: center;
-                width: 100%;
-            }
-            .btn {
-                padding: 10px;
-                border-radius: 0;
-                border: none;
-                font-size: 21px;
-            }
-        </style>
-        <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.0/css/bootstrap.min.css" rel="stylesheet">
-        <script src="//netdna.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
-        <script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
-        <div class="container">
-            <div class="row">
-                <div class="page-header"><h2>Formulário de Acesso</h2></div>
-                ${req.session.loginError ? '<div class="alert alert-danger">Usuário ou senha incorretos!</div>' : ''}
-                <form class="form-horizontal" method="POST" action="/login">
-                    <fieldset>
-                        <legend><h3>Já tem uma conta? Acesse</h3></legend>
-                        <div class="form-group">
-                            <label class="col-md-1 control-label" for="usuario"></label>  
-                            <div class="col-md-12">
-                                <input id="usuario" name="usuario" type="text" placeholder="Usuário" class="form-control input-md" required>
-                            </div>
+        <!DOCTYPE html>
+        <html lang="pt-br">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Formulário de Acesso | Vôlei 2025</title>
+            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+            <style>
+                :root {
+                    --primary-color: #2c3e50;
+                    --secondary-color: #3498db;
+                }
+                
+                body {
+                    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    min-height: 100vh;
+                    margin: 0;
+                    padding: 20px;
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                }
+                
+                .login-box {
+                    background: rgba(255, 255, 255, 0.95);
+                    padding: 2.5rem;
+                    border-radius: 15px;
+                    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+                    width: 100%;
+                    max-width: 500px;
+                    backdrop-filter: blur(5px);
+                    border: 1px solid rgba(255, 255, 255, 0.2);
+                    transition: all 0.3s ease;
+                }
+                
+                .login-box:hover {
+                    transform: translateY(-5px);
+                    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+                }
+                
+                .form-header {
+                    text-align: center;
+                    margin-bottom: 2rem;
+                    padding-bottom: 1rem;
+                    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+                }
+                
+                .form-header h2 {
+                    color: var(--primary-color);
+                    font-weight: 700;
+                    margin-bottom: 0.5rem;
+                }
+                
+                .form-control {
+                    height: 50px;
+                    font-size: 1rem;
+                    border-radius: 8px;
+                    border: 1px solid #ddd;
+                    padding-left: 15px;
+                    transition: all 0.3s;
+                }
+                
+                .form-control:focus {
+                    border-color: var(--secondary-color);
+                    box-shadow: 0 0 0 0.25rem rgba(52, 152, 219, 0.25);
+                }
+                
+                .btn-login {
+                    font-size: 1.1rem;
+                    padding: 12px;
+                    border-radius: 8px;
+                    font-weight: 600;
+                    letter-spacing: 0.5px;
+                    transition: all 0.3s;
+                }
+                
+                .btn-primary-custom {
+                    background-color: var(--secondary-color);
+                    border-color: var(--secondary-color);
+                }
+                
+                .btn-primary-custom:hover {
+                    background-color: #2980b9;
+                    border-color: #2980b9;
+                    transform: translateY(-2px);
+                }
+                
+                .btn-secondary-custom {
+                    background-color: #7f8c8d;
+                    border-color: #7f8c8d;
+                    color: white;
+                }
+                
+                .btn-secondary-custom:hover {
+                    background-color: #6c7a7d;
+                    border-color: #6c7a7d;
+                    transform: translateY(-2px);
+                }
+                
+                .input-icon {
+                    position: relative;
+                }
+                
+                .input-icon i {
+                    position: absolute;
+                    left: 15px;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    color: #95a5a6;
+                }
+                
+                .input-icon input {
+                    padding-left: 45px;
+                }
+                
+                .logo {
+                    text-align: center;
+                    margin-bottom: 1.5rem;
+                }
+                
+                .logo img {
+                    height: 60px;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="login-box">
+                <div class="logo">
+                    <i class="fas fa-volleyball-ball fa-3x" style="color: var(--secondary-color);"></i>
+                </div>
+                
+                <div class="form-header">
+                    <h2>Acesse sua conta</h2>
+                    ${req.session.loginError ? '<div class="alert alert-danger mt-3"><i class="fas fa-exclamation-circle me-2"></i>Usuário ou senha incorretos!</div>' : ''}
+                </div>
+                
+                <form method="POST" action="/login" class="needs-validation" novalidate>
+                    <div class="mb-4">
+                        <div class="input-icon mb-3">
+                            <i class="fas fa-user"></i>
+                            <input type="text" class="form-control" id="usuario" name="usuario" placeholder="Usuário" required>
                         </div>
-                        <div class="form-group">
-                            <label class="col-md-1 control-label" for="senha"></label>
-                            <div class="col-md-12">
-                                <input id="senha" name="senha" type="password" placeholder="senha" class="form-control input-md" required>
-                            </div>
+                        <div class="invalid-feedback">Por favor, informe seu usuário.</div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <div class="input-icon mb-3">
+                            <i class="fas fa-lock"></i>
+                            <input type="password" class="form-control" id="senha" name="senha" placeholder="Senha" required>
                         </div>
-                        <div class="form-group">
-                            <label class="col-md-1 control-label" for="login"></label>
-                            <div class="col-md-5">
-                                <button id="login" name="login" class="btn btn-block btn-success" type="submit">Acessar</button>
-                            </div>
-                            <div class="col-md-5">
-                                <a href="/" class="btn btn-block btn-warning">Voltar</a>
-                            </div>  
-                        </div>
-                    </fieldset>
+                        <div class="invalid-feedback">Por favor, informe sua senha.</div>
+                    </div>
+                    
+                    <div class="d-grid gap-3">
+                        <button type="submit" class="btn btn-primary-custom btn-login">
+                            <i class="fas fa-sign-in-alt me-2"></i>Acessar
+                        </button>
+                        <a href="/" class="btn btn-secondary-custom btn-login">
+                            <i class="fas fa-arrow-left me-2"></i>Voltar
+                        </a>
+                    </div>
+                    
+                    <div class="text-center mt-4">
+                        <a href="/esq" class="text-decoration-none" style="color: var(--secondary-color);">Esqueceu sua senha?</a>
+                    </div>
                 </form>
             </div>
-        </div>
+
+            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+            <script>
+                // Validação do formulário
+                (() => {
+                    'use strict'
+                    const forms = document.querySelectorAll('.needs-validation')
+                    Array.from(forms).forEach(form => {
+                        form.addEventListener('submit', event => {
+                            if (!form.checkValidity()) {
+                                event.preventDefault()
+                                event.stopPropagation()
+                            }
+                            form.classList.add('was-validated')
+                        }, false)
+                    })
+                })()
+            </script>
+        </body>
+        </html>
     `);
 });
-
-
-
-
 
 
 app.post("/login", (req, res) => {
@@ -828,76 +1210,8 @@ app.get("/logout", (req, res) => {
     res.redirect("/usuario");
 });
 
-app.get("/esq", (req, res) =>{
-    
-    res.send(`<p> CONTA CADASTRADA NO SISTEMA [...] </p>
-        <a href="/" class="btn btn-primary mt-3">Acessar sua conta</a>
-    `);
-});
 
 
-app.get("/agenda", verificarAutenticacao, (req, res) => {
-    let tabela = `
-        <html lang="pt-br">
-            <head>
-                <meta charset="UTF-8">
-                <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css" rel="stylesheet">
-                <title>Agenda de Consultas</title>
-            </head>
-            <body>
-                <div class="container mt-5">
-                    <h2 class="mb-4 text-center">Agenda de Consultas</h2>
-                    <a href="/" class="btn btn-secondary mb-3">Voltar</a>
-    `;
-
-    if (listaUsuarios.length === 0) {
-        tabela += `<p class="text-center">Nenhum cliente agendado até o momento.</p>`;
-    } else {
-        tabela += `
-            <table class="table table-bordered table-striped">
-                <thead class="table-dark">
-                    <tr>
-                        <th>#</th>
-                        <th>Nome</th>
-                        <th>Instagram</th>
-                        <th>Cidade</th>
-                        <th>Estado</th>
-                        <th>Email</th>
-                        <th>Telefone</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
-
-        listaUsuarios.forEach((usuario, index) => {
-            tabela += `
-                <tr>
-                    <td>${index + 1}</td>
-                    <td>${usuario.nome} ${usuario.sobrenome}</td>
-                    <td>@${usuario.instagram}</td>
-                    <td>${usuario.cidade}</td>
-                    <td>${usuario.estado}</td>
-                    <td>${usuario.email}</td>
-                    <td>${usuario.telefone}</td>
-                </tr>
-            `;
-        });
-
-        tabela += `
-                </tbody>
-            </table>
-        `;
-    }
-
-    tabela += `
-                </div>
-                <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"></script>
-            </body>
-        </html>
-    `;
-
-    res.send(tabela);
-});
 
 app.listen(port, host, () => {
     console.log(`Servidor em execução: http://${host}:${port}/`);
