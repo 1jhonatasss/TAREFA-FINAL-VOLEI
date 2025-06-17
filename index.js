@@ -78,7 +78,7 @@ app.get("/", (req, res) => {
                     .navbar-brand {
                         font-family: 'Montserrat', sans-serif;
                         font-weight: 700;
-                        font-size: 1.5rem;
+                        font-size: 2.5rem;
                         color: white !important;
                         text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
                         transition: all 0.3s ease;
