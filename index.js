@@ -34,11 +34,11 @@ function formatarTelefone(numero) {
 }
 
 app.get("/", (req, res) => {
-    // Atualiza o cookie do último acesso
+
     const agora = new Date().toLocaleString('pt-BR');
     res.cookie('ultimoAcesso', agora, { maxAge: 900000, httpOnly: true });
     
-    // Recupera o último acesso (se existir)
+
     const ultimoAcesso = req.cookies.ultimoAcesso || 'Primeiro acesso';
 
     res.send(`
@@ -374,7 +374,6 @@ app.get("/cadastro-jogador", verificarAutenticacao, (req, res) => {
 
                 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"></script>
                 <script>
-                    // Validação do formulário
                     (() => {
                         'use strict'
                         const forms = document.querySelectorAll('.needs-validation')
@@ -408,7 +407,7 @@ app.post("/cadastro-jogador", (req, res) => {
     const { nome, numero, nascimento, altura, genero, posicao, equipe } = req.body;
 
         const alturaNum = parseInt(altura.toString().replace('cm', ''));
-    // Validação no servidor
+
     const errors = [];
     if (!nome) errors.push("Nome completo é obrigatório");
     if (!numero || numero < 1 || numero > 99) errors.push("Número da camisa inválido (1-99)");
@@ -442,10 +441,9 @@ app.post("/cadastro-jogador", (req, res) => {
         `);
     }
     
-    // Aqui você normalmente salvaria no banco de dados
-    // Vamos simular com um array em memória
+
  const novoJogador = {
-        id: listaJogadores.length + 1,  // ID sequencial
+        id: listaJogadores.length + 1, 
         nome,
         numero: parseInt(numero),
         nascimento,
@@ -456,10 +454,10 @@ app.post("/cadastro-jogador", (req, res) => {
         dataCadastro: new Date().toISOString()
     };
     
-    // Adiciona à lista (substitua por seu banco de dados real)
+
     listaJogadores.push(novoJogador);
     
-    // Página de sucesso
+
     res.send(`
         <html lang="pt-br">
             <head>
@@ -571,7 +569,7 @@ app.get("/cadastro-time", verificarAutenticacao,  (req, res) => {
 
                 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"></script>
                 <script>
-                    // Validação do formulário
+
                     (() => {
                         'use strict'
                         const forms = document.querySelectorAll('.needs-validation')
@@ -586,7 +584,7 @@ app.get("/cadastro-time", verificarAutenticacao,  (req, res) => {
                         })
                     })()
                     
-                    // Máscara para telefone
+
                     document.getElementById('telefone').addEventListener('input', function() {
                         this.value = this.value.replace(/\D/g, '');
                     });
@@ -599,7 +597,7 @@ app.get("/cadastro-time", verificarAutenticacao,  (req, res) => {
 app.post("/cadastro-time", (req, res) => {
     const { nomeEquipe, tecnico, telefone } = req.body;
 
-    // Validação no servidor
+
     const errors = [];
     if (!nomeEquipe || nomeEquipe.length < 3) errors.push("Nome da equipe deve ter pelo menos 3 caracteres");
     if (!tecnico || tecnico.length < 3) errors.push("Nome do técnico deve ter pelo menos 3 caracteres");
@@ -629,7 +627,7 @@ app.post("/cadastro-time", (req, res) => {
         `);
     }
     
-    // Criar novo time
+
     const novoTime = {
         id: listaTimes.length + 1,
         nomeEquipe,
@@ -638,10 +636,10 @@ app.post("/cadastro-time", (req, res) => {
         dataCadastro: new Date().toISOString()
     };
     
-    // Adiciona à lista
+
     listaTimes.push(novoTime);
     
-    // Página de sucesso
+
     res.send(`
         <html lang="pt-br">
             <head>
@@ -1140,7 +1138,7 @@ app.get("/times", (req, res) => {
 });
 
 app.get("/jogadores-por-time", (req, res) => {
-    // Agrupa jogadores por time
+
     const jogadoresPorTime = {};
     
     listaJogadores.forEach(jogador => {
@@ -1151,7 +1149,7 @@ app.get("/jogadores-por-time", (req, res) => {
         jogadoresPorTime[time].push(jogador);
     });
 
-    // Ordena os times alfabeticamente
+
     const timesOrdenados = Object.keys(jogadoresPorTime).sort();
 
     res.send(`
@@ -1393,10 +1391,10 @@ app.delete("/excluir-time/:id", (req, res) => {
     const index = listaTimes.findIndex(t => t.id === id);
     
     if (index !== -1) {
-        // Remove o time
+
         listaTimes.splice(index, 1);
         
-        // Remove a referência do time nos jogadores
+
         listaJogadores = listaJogadores.map(jogador => {
             if (jogador.equipe === listaTimes[index]?.nomeEquipe) {
                 return { ...jogador, equipe: "Sem time" };
@@ -1597,7 +1595,6 @@ app.get("/usuario", (req, res) => {
 
             <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
             <script>
-                // Validação do formulário
                 (() => {
                     'use strict'
                     const forms = document.querySelectorAll('.needs-validation')
