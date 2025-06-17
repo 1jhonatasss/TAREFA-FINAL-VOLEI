@@ -6,8 +6,6 @@ const app = express();
 
 const host = "0.0.0.0";
 const port = 3000;
-let listaUsuarios = [];
-let listaProdutos = []; 
 let listaJogadores = [];
 let listaTimes = [];
 
@@ -36,11 +34,18 @@ function formatarTelefone(numero) {
 }
 
 app.get("/", (req, res) => {
-    res.send(
-        `<html lang="pt-br">
+    // Atualiza o cookie do último acesso
+    const agora = new Date().toLocaleString('pt-BR');
+    res.cookie('ultimoAcesso', agora, { maxAge: 900000, httpOnly: true });
+    
+    // Recupera o último acesso (se existir)
+    const ultimoAcesso = req.cookies.ultimoAcesso || 'Primeiro acesso';
+
+    res.send(`
+        <html lang="pt-br">
             <head>
                 <meta charset="UTF-8">
-                <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css" rel="stylesheet">
                 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
                 <title>Campeonato de Vôlei 2025</title>
@@ -58,13 +63,16 @@ app.get("/", (req, res) => {
                         margin: 0;
                         padding: 0;
                         color: var(--dark-color);
-                        background-color: var(--light-color);
+                        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+                        min-height: 100vh;
                     }
                     
                     .header {
                         background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
                         padding: 1rem 0;
                         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+                        position: relative;
+                        z-index: 100;
                     }
                     
                     .navbar-brand {
@@ -76,10 +84,6 @@ app.get("/", (req, res) => {
                         transition: all 0.3s ease;
                     }
                     
-                    .navbar-brand:hover {
-                        transform: scale(1.03);
-                    }
-                    
                     .nav-link {
                         font-weight: 600;
                         color: white !important;
@@ -89,29 +93,27 @@ app.get("/", (req, res) => {
                         margin: 0 0.2rem;
                     }
                     
-                    .nav-link:hover {
-                        background-color: rgba(255, 255, 255, 0.2);
-                        transform: translateY(-2px);
-                    }
-                    
                     .main-content {
-                        min-height: 100vh;
                         padding: 2rem;
+                        position: relative;
+                        z-index: 10;
                     }
                     
                     .menu-section {
-                        background-color: white;
-                        border-radius: 8px;
+                        background: rgba(255, 255, 255, 0.95);
+                        border-radius: 12px;
                         padding: 1.5rem;
-                        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+                        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
                         margin-bottom: 2rem;
                         transition: all 0.3s ease;
-                        height: 100%; /* Ajuste de altura */
+                        height: 100%;
+                        backdrop-filter: blur(5px);
+                        border: 1px solid rgba(255, 255, 255, 0.2);
                     }
                     
                     .menu-section:hover {
                         transform: translateY(-5px);
-                        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+                        box-shadow: 0 12px 25px rgba(0, 0, 0, 0.2);
                     }
                     
                     .menu-title {
@@ -150,6 +152,18 @@ app.get("/", (req, res) => {
                         width: 1.5rem;
                         text-align: center;
                     }
+                    
+                    .last-access {
+                        background-color: rgba(255, 255, 255, 0.15);
+                        color: white;
+                        padding: 0.5rem 1.5rem;
+                        border-radius: 20px;
+                        font-size: 0.9rem;
+                        margin: 1rem auto;
+                        display: inline-block;
+                        backdrop-filter: blur(5px);
+                        border: 1px solid rgba(255, 255, 255, 0.1);
+                    }
                 </style>
             </head>
             <body>
@@ -173,7 +187,13 @@ app.get("/", (req, res) => {
 
                 <main class="main-content">
                     <div class="container">
-                        <div class="row">
+                        <div class="text-center">
+                            <div class="last-access">
+                                <i class="fas fa-clock me-2"></i>Último acesso: ${ultimoAcesso}
+                            </div>
+                        </div>
+                        
+                        <div class="row mt-3">
                             <!-- Seção SOBRE -->
                             <div class="col-md-4">
                                 <div class="menu-section">
@@ -196,7 +216,7 @@ app.get("/", (req, res) => {
                                 </div>
                             </div>
                             
-                            <!-- Seção AGENDAMENTOS (agora CADASTRO) -->
+                            <!-- Seção CADASTRO -->
                             <div class="col-md-4">
                                 <div class="menu-section">
                                     <h3 class="menu-title"><i class="fas fa-edit me-2"></i>CADASTRO</h3>
@@ -213,7 +233,7 @@ app.get("/", (req, res) => {
                                 </div>
                             </div>
                             
-                            <!-- Nova Seção LISTA -->
+                            <!-- Seção LISTA -->
                             <div class="col-md-4">
                                 <div class="menu-section">
                                     <h3 class="menu-title"><i class="fas fa-list me-2"></i>LISTA</h3>
@@ -228,10 +248,10 @@ app.get("/", (req, res) => {
                                         </a>
                                     </div>
                                     <div class="menu-item">
-    <a href="/jogadores-por-time">
-        <i class="fas fa-layer-group"></i> Jogadores por Time
-    </a>
-</div>
+                                        <a href="/jogadores-por-time">
+                                            <i class="fas fa-layer-group"></i> Jogadores por Time
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -663,79 +683,226 @@ app.get("/lista-jogadores", (req, res) => {
         <html lang="pt-br">
             <head>
                 <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css" rel="stylesheet">
                 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-                <title>Lista de Jogadores</title>
+                <title>Lista de Jogadores | Vôlei 2025</title>
                 <style>
-                    .table-responsive { max-height: 70vh; overflow-y: auto; }
-                    .table thead th { position: sticky; top: 0; background: white; }
+                    :root {
+                        --primary-dark: #0d1b2a;
+                        --primary-light: #1b9ce2;
+                        --accent: #00e5ff;
+                        --glass: rgba(255, 255, 255, 0.95);
+                        --glass-border: rgba(255, 255, 255, 0.1);
+                        --text-dark: #2c3e50;
+                        --card-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+                    }
+                    
+                    body {
+                        background: linear-gradient(145deg, var(--primary-dark), var(--primary-light));
+                        font-family: 'Inter', system-ui, sans-serif;
+                        min-height: 100vh;
+                        margin: 0;
+                        padding: 20px;
+                    }
+                    
+                    .main-container {
+                        background: var(--glass);
+                        border-radius: 16px;
+                        padding: 2.5rem;
+                        box-shadow: var(--card-shadow);
+                        border: 1px solid var(--glass-border);
+                    }
+                    
+                    .table-container {
+                        background: white;
+                        border-radius: 12px;
+                        overflow: hidden;
+                        box-shadow: 0 2px 16px rgba(0, 0, 0, 0.05);
+                    }
+                    
+                    .table thead {
+                        background: linear-gradient(95deg, var(--primary-dark), var(--primary-light));
+                        color: white;
+                        font-weight: 600;
+                    }
+                    
+                    .table th {
+                        padding: 1.2rem;
+                        font-size: 0.85rem;
+                        text-transform: uppercase;
+                        vertical-align: middle;
+                    }
+                    
+                    .table td {
+                        padding: 1.2rem;
+                        vertical-align: middle;
+                        border-bottom: 1px solid rgba(0, 0, 0, 0.03);
+                        background: white;
+                    }
+                    
+                    .table tr:last-child td {
+                        border-bottom: none;
+                    }
+                    
+                    .btn-action {
+                        width: 38px;
+                        height: 38px;
+                        border-radius: 10px;
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        margin: 0 4px;
+                        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+                        border: none;
+                    }
+                    
+                    .empty-state {
+                        background: white;
+                        border-radius: 16px;
+                        padding: 3rem 2rem;
+                        text-align: center;
+                    }
+                    
+                    .title-section {
+                        color: var(--text-dark);
+                        position: relative;
+                        padding-bottom: 1rem;
+                        margin-bottom: 2rem;
+                        font-weight: 700;
+                        font-size: 1.8rem;
+                    }
+                    
+                    .title-section::after {
+                        content: '';
+                        position: absolute;
+                        left: 0;
+                        bottom: 0;
+                        width: 60px;
+                        height: 4px;
+                        background: var(--accent);
+                        border-radius: 2px;
+                    }
+                    
+                    .btn-premium {
+                        background: linear-gradient(95deg, var(--accent), var(--primary-light));
+                        border: none;
+                        color: white;
+                        font-weight: 600;
+                        padding: 0.9rem 2rem;
+                        border-radius: 12px;
+                    }
+                    
+                    .badge-count {
+                        background: var(--accent);
+                        color: white;
+                        font-size: 1rem;
+                        padding: 0.4rem 0.9rem;
+                        border-radius: 50px;
+                        margin-left: 0.8rem;
+                    }
+                    
+                    .btn-back {
+                        background: rgba(255, 255, 255, 0.9);
+                        border: 1px solid rgba(0, 0, 0, 0.05);
+                        color: var(--text-dark);
+                        padding: 0.7rem 1.5rem;
+                        border-radius: 10px;
+                        font-weight: 600;
+                    }
+                    
+                    .btn-view {
+                        background: rgba(255, 255, 255, 0.9);
+                        border: 1px solid rgba(0, 0, 0, 0.05);
+                        color: var(--text-dark);
+                        padding: 0.7rem 1.5rem;
+                        border-radius: 10px;
+                        font-weight: 600;
+                        margin-bottom: 1.5rem;
+                    }
+                    
+                    @media (max-width: 768px) {
+                        .main-container {
+                            padding: 1.5rem;
+                        }
+                        
+                        .table th, .table td {
+                            padding: 1rem;
+                        }
+                    }
                 </style>
             </head>
-            <body class="bg-light">
-                <div class="container py-5">
-                    <h1 class="text-center mb-4">
-                        <i class="fas fa-users"></i> Jogadores Cadastrados
-                        <span class="badge bg-primary">${listaJogadores.length}</span>
-                    </h1>
-                    
-                    ${listaJogadores.length > 0 ? `
-                    <div class="table-responsive">
-                        <table class="table table-striped table-hover">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Nome</th>
-                                    <th>Número</th>
-                                    <th>Posição</th>
-                                    <th>Time</th>
-                                    <th>Altura</th>
-                                    <th>Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${listaJogadores.map(jogador => `
-                                <tr>
-                                    <td>${jogador.id}</td>
-                                    <td>${jogador.nome}</td>
-                                    <td>${jogador.numero}</td>
-                                    <td>${jogador.posicao}</td>
-                                    <td>${jogador.equipe}</td>
-                                    <td>${jogador.altura}cm</td>
-                                    <td>
-                                        <a href="/editar-jogador/${jogador.id}" class="btn btn-sm btn-warning">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                        <button class="btn btn-sm btn-danger" onclick="excluirJogador(${jogador.id})">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-                    ` : `
-                    <div class="text-center mb-4">
-    <a href="/jogadores-por-time" class="btn btn-primary me-2">
-        <i class="fas fa-layer-group"></i> Ver Agrupado por Time
-    </a>
-</div>
-                    <div class="alert alert-info text-center">
-                        <i class="fas fa-info-circle fa-2x mb-3"></i>
-                        <h4>Nenhum jogador cadastrado ainda!</h4>
-                        <a href="/cadastro-jogador" class="btn btn-primary mt-3">
-                            <i class="fas fa-user-plus"></i> Cadastrar Primeiro Jogador
-                        </a>
-                    </div>
-                    `}
-                    
-                    <div class="text-center mt-4">
-                        <a href="/" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left"></i> Voltar ao Início
-                        </a>
+            <body>
+                <div class="container py-4">
+                    <div class="main-container">
+                        <h1 class="title-section">
+                            <i class="fas fa-users me-2"></i>Jogadores Cadastrados
+                            <span class="badge-count">${listaJogadores.length}</span>
+                        </h1>
+                        
+                        ${listaJogadores.length > 0 ? `
+                        <div class="text-center mb-4">
+                            <a href="/jogadores-por-time" class="btn btn-view">
+                                <i class="fas fa-layer-group me-2"></i>Ver Agrupado por Time
+                            </a>
+                        </div>
+                        <div class="table-responsive table-container">
+                            <table class="table align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Nome</th>
+                                        <th>Número</th>
+                                        <th>Posição</th>
+                                        <th>Time</th>
+                                        <th>Altura</th>
+                                        <th class="text-center">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${listaJogadores.map(jogador => `
+                                    <tr>
+                                        <td class="fw-bold">${jogador.id}</td>
+                                        <td class="fw-semibold">${jogador.nome}</td>
+                                        <td>${jogador.numero}</td>
+                                        <td>${jogador.posicao}</td>
+                                        <td>${jogador.equipe}</td>
+                                        <td>${jogador.altura}cm</td>
+                                        <td class="text-center">
+                                            <a href="/editar-jogador/${jogador.id}" class="btn btn-warning btn-action" title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <button class="btn btn-danger btn-action" onclick="excluirJogador(${jogador.id})" title="Excluir">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                        ` : `
+                        <div class="empty-state">
+                            <div class="mb-4" style="font-size: 4rem; color: var(--accent);">
+                                <i class="fas fa-user-slash"></i>
+                            </div>
+                            <h3 class="mb-3 fw-bold">Nenhum jogador cadastrado</h3>
+                            <p class="mb-4 text-muted">Comece cadastrando o primeiro jogador do campeonato</p>
+                            <a href="/cadastro-jogador" class="btn btn-premium">
+                                <i class="fas fa-user-plus me-2"></i>Cadastrar Jogador
+                            </a>
+                        </div>
+                        `}
+                        
+                        <div class="text-center mt-4">
+                            <a href="/" class="btn btn-back">
+                                <i class="fas fa-arrow-left me-2"></i>Voltar ao Início
+                            </a>
+                        </div>
                     </div>
                 </div>
 
+                <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"></script>
                 <script>
                     function excluirJogador(id) {
                         if (confirm('Tem certeza que deseja excluir este jogador?')) {
@@ -755,72 +922,209 @@ app.get("/times", (req, res) => {
         <html lang="pt-br">
             <head>
                 <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css" rel="stylesheet">
                 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-                <title>Lista de Times</title>
+                <title>Lista de Times | Vôlei 2025</title>
                 <style>
-                    .table-responsive { max-height: 70vh; overflow-y: auto; }
-                    .table thead th { position: sticky; top: 0; background: white; }
+                    :root {
+                        --primary-dark: #0d1b2a;
+                        --primary-light: #1b9ce2;
+                        --accent: #00e5ff;
+                        --glass: rgba(255, 255, 255, 0.95);
+                        --glass-border: rgba(255, 255, 255, 0.1);
+                        --text-dark: #2c3e50;
+                        --card-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+                    }
+                    
+                    body {
+                        background: linear-gradient(145deg, var(--primary-dark), var(--primary-light));
+                        font-family: 'Inter', system-ui, sans-serif;
+                        min-height: 100vh;
+                        margin: 0;
+                        padding: 20px;
+                    }
+                    
+                    .main-container {
+                        background: var(--glass);
+                        border-radius: 16px;
+                        padding: 2.5rem;
+                        box-shadow: var(--card-shadow);
+                        border: 1px solid var(--glass-border);
+                    }
+                    
+                    .table-container {
+                        background: white;
+                        border-radius: 12px;
+                        overflow: hidden;
+                        box-shadow: 0 2px 16px rgba(0, 0, 0, 0.05);
+                    }
+                    
+                    .table thead {
+                        background: linear-gradient(95deg, var(--primary-dark), var(--primary-light));
+                        color: white;
+                        font-weight: 600;
+                    }
+                    
+                    .table th {
+                        padding: 1.2rem;
+                        font-size: 0.85rem;
+                        text-transform: uppercase;
+                        vertical-align: middle;
+                    }
+                    
+                    .table td {
+                        padding: 1.2rem;
+                        vertical-align: middle;
+                        border-bottom: 1px solid rgba(0, 0, 0, 0.03);
+                        background: white;
+                    }
+                    
+                    .table tr:last-child td {
+                        border-bottom: none;
+                    }
+                    
+                    .btn-action {
+                        width: 38px;
+                        height: 38px;
+                        border-radius: 10px;
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        margin: 0 4px;
+                        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+                        border: none;
+                    }
+                    
+                    .empty-state {
+                        background: white;
+                        border-radius: 16px;
+                        padding: 3rem 2rem;
+                        text-align: center;
+                    }
+                    
+                    .title-section {
+                        color: var(--text-dark);
+                        position: relative;
+                        padding-bottom: 1rem;
+                        margin-bottom: 2rem;
+                        font-weight: 700;
+                        font-size: 1.8rem;
+                    }
+                    
+                    .title-section::after {
+                        content: '';
+                        position: absolute;
+                        left: 0;
+                        bottom: 0;
+                        width: 60px;
+                        height: 4px;
+                        background: var(--accent);
+                        border-radius: 2px;
+                    }
+                    
+                    .btn-premium {
+                        background: linear-gradient(95deg, var(--accent), var(--primary-light));
+                        border: none;
+                        color: white;
+                        font-weight: 600;
+                        padding: 0.9rem 2rem;
+                        border-radius: 12px;
+                    }
+                    
+                    .badge-count {
+                        background: var(--accent);
+                        color: white;
+                        font-size: 1rem;
+                        padding: 0.4rem 0.9rem;
+                        border-radius: 50px;
+                        margin-left: 0.8rem;
+                    }
+                    
+                    .btn-back {
+                        background: rgba(255, 255, 255, 0.9);
+                        border: 1px solid rgba(0, 0, 0, 0.05);
+                        color: var(--text-dark);
+                        padding: 0.7rem 1.5rem;
+                        border-radius: 10px;
+                        font-weight: 600;
+                    }
+                    
+                    @media (max-width: 768px) {
+                        .main-container {
+                            padding: 1.5rem;
+                        }
+                        
+                        .table th, .table td {
+                            padding: 1rem;
+                        }
+                    }
                 </style>
             </head>
-            <body class="bg-light">
-                <div class="container py-5">
-                    <h1 class="text-center mb-4">
-                        <i class="fas fa-users"></i> Times Cadastrados
-                        <span class="badge bg-primary">${listaTimes.length}</span>
-                    </h1>
-                    
-                    ${listaTimes.length > 0 ? `
-                    <div class="table-responsive">
-                        <table class="table table-striped table-hover">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Nome da Equipe</th>
-                                    <th>Técnico</th>
-                                    <th>Telefone</th>
-                                    <th>Data Cadastro</th>
-                                    <th>Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${listaTimes.map(time => `
-                                <tr>
-                                    <td>${time.id}</td>
-                                    <td>${time.nomeEquipe}</td>
-                                    <td>${time.tecnico}</td>
-                                    <td>${formatarTelefone(time.telefone)}</td>
-                                    <td>${new Date(time.dataCadastro).toLocaleDateString('pt-BR')}</td>
-                                    <td>
-                                        <a href="/editar-time/${time.id}" class="btn btn-sm btn-warning">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                        <button class="btn btn-sm btn-danger" onclick="excluirTime(${time.id})">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-                    ` : `
-                    <div class="alert alert-info text-center">
-                        <i class="fas fa-info-circle fa-2x mb-3"></i>
-                        <h4>Nenhum time cadastrado ainda!</h4>
-                        <a href="/cadastro-time" class="btn btn-primary mt-3">
-                            <i class="fas fa-plus-circle"></i> Cadastrar Primeiro Time
-                        </a>
-                    </div>
-                    `}
-                    
-                    <div class="text-center mt-4">
-                        <a href="/" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left"></i> Voltar ao Início
-                        </a>
+            <body>
+                <div class="container py-4">
+                    <div class="main-container">
+                        <h1 class="title-section">
+                            <i class="fas fa-users me-2"></i>Times Cadastrados
+                            <span class="badge-count">${listaTimes.length}</span>
+                        </h1>
+                        
+                        ${listaTimes.length > 0 ? `
+                        <div class="table-responsive table-container">
+                            <table class="table align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Equipe</th>
+                                        <th>Técnico</th>
+                                        <th>Contato</th>
+                                        <th>Cadastro</th>
+                                        <th class="text-center">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${listaTimes.map(time => `
+                                    <tr>
+                                        <td class="fw-bold">${time.id}</td>
+                                        <td class="fw-semibold">${time.nomeEquipe}</td>
+                                        <td>${time.tecnico}</td>
+                                        <td>${formatarTelefone(time.telefone)}</td>
+                                        <td>${new Date(time.dataCadastro).toLocaleDateString('pt-BR')}</td>
+                                        <td class="text-center">
+                                            <a href="/editar-time/${time.id}" class="btn btn-warning btn-action" title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <button class="btn btn-danger btn-action" onclick="excluirTime(${time.id})" title="Excluir">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                        ` : `
+                        <div class="empty-state">
+                            <div class="mb-4" style="font-size: 4rem; color: var(--accent);">
+                                <i class="fas fa-users-slash"></i>
+                            </div>
+                            <h3 class="mb-3 fw-bold">Nenhum time cadastrado</h3>
+                            <p class="mb-4 text-muted">Comece cadastrando o primeiro time do campeonato</p>
+                            <a href="/cadastro-time" class="btn btn-premium">
+                                <i class="fas fa-plus-circle me-2"></i>Cadastrar Time
+                            </a>
+                        </div>
+                        `}
+                        
+                        <div class="text-center mt-4">
+                            <a href="/" class="btn btn-back">
+                                <i class="fas fa-arrow-left me-2"></i>Voltar ao Início
+                            </a>
+                        </div>
                     </div>
                 </div>
 
+                <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"></script>
                 <script>
                     function excluirTime(id) {
                         if (confirm('Tem certeza que deseja excluir este time? Todos os jogadores vinculados perderão a referência!')) {
@@ -854,89 +1158,222 @@ app.get("/jogadores-por-time", (req, res) => {
         <html lang="pt-br">
             <head>
                 <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css" rel="stylesheet">
                 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-                <title>Jogadores por Time</title>
+                <title>Jogadores por Time | Vôlei 2025</title>
                 <style>
-                    .time-header {
-                        background-color: #2c3e50;
+                    :root {
+                        --primary-dark: #0d1b2a;
+                        --primary-light: #1b9ce2;
+                        --accent: #00e5ff;
+                        --glass: rgba(255, 255, 255, 0.95);
+                        --glass-border: rgba(255, 255, 255, 0.1);
+                        --text-dark: #2c3e50;
+                        --card-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+                    }
+                    
+                    body {
+                        background: linear-gradient(145deg, var(--primary-dark), var(--primary-light));
+                        font-family: 'Inter', system-ui, sans-serif;
+                        min-height: 100vh;
+                        margin: 0;
+                        padding: 20px;
+                    }
+                    
+                    .main-container {
+                        background: var(--glass);
+                        border-radius: 16px;
+                        padding: 2.5rem;
+                        box-shadow: var(--card-shadow);
+                        border: 1px solid var(--glass-border);
+                    }
+                    
+                    .title-section {
+                        color: var(--text-dark);
+                        position: relative;
+                        padding-bottom: 1rem;
+                        margin-bottom: 2rem;
+                        font-weight: 700;
+                        font-size: 1.8rem;
+                    }
+                    
+                    .title-section::after {
+                        content: '';
+                        position: absolute;
+                        left: 0;
+                        bottom: 0;
+                        width: 60px;
+                        height: 4px;
+                        background: var(--accent);
+                        border-radius: 2px;
+                    }
+                    
+                    .team-header {
+                        background: linear-gradient(95deg, var(--primary-dark), var(--primary-light));
                         color: white;
-                        padding: 10px 15px;
-                        border-radius: 5px;
-                        margin-top: 20px;
-                        margin-bottom: 10px;
-                        font-weight: bold;
+                        padding: 1rem 1.5rem;
+                        border-radius: 10px;
+                        margin: 1.5rem 0;
+                        font-weight: 600;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
                     }
-                    .jogador-card {
-                        border-left: 4px solid #3498db;
-                        margin-bottom: 10px;
-                        padding: 10px;
-                        background-color: #f8f9fa;
-                        border-radius: 4px;
+                    
+                    .player-card {
+                        background: white;
+                        border-radius: 10px;
+                        padding: 1.2rem;
+                        margin-bottom: 1rem;
+                        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
                     }
+                    
                     .badge-posicao {
-                        background-color: #e74c3c;
+                        background: #e74c3c;
+                        color: white;
+                        font-weight: 600;
+                        padding: 0.4rem 0.8rem;
+                        border-radius: 6px;
                     }
+                    
                     .badge-numero {
-                        background-color: #2ecc71;
+                        background: #2ecc71;
+                        color: white;
+                        font-weight: 600;
+                        padding: 0.4rem 0.8rem;
+                        border-radius: 6px;
+                    }
+                    
+                    .btn-action {
+                        width: 36px;
+                        height: 36px;
+                        border-radius: 8px;
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        margin: 0 4px;
+                        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+                        border: none;
+                    }
+                    
+                    .empty-state {
+                        background: white;
+                        border-radius: 16px;
+                        padding: 3rem 2rem;
+                        text-align: center;
+                    }
+                    
+                    .btn-premium {
+                        background: linear-gradient(95deg, var(--accent), var(--primary-light));
+                        border: none;
+                        color: white;
+                        font-weight: 600;
+                        padding: 0.9rem 2rem;
+                        border-radius: 10px;
+                    }
+                    
+                    .badge-count {
+                        background: var(--accent);
+                        color: white;
+                        font-size: 0.9rem;
+                        padding: 0.3rem 0.8rem;
+                        border-radius: 50px;
+                    }
+                    
+                    .btn-view {
+                        background: rgba(255, 255, 255, 0.9);
+                        border: 1px solid rgba(0, 0, 0, 0.05);
+                        color: var(--text-dark);
+                        padding: 0.7rem 1.5rem;
+                        border-radius: 8px;
+                        font-weight: 600;
+                        margin: 0 0.5rem 1rem 0.5rem;
+                    }
+                    
+                    .player-name {
+                        font-weight: 600;
+                        color: var(--text-dark);
+                    }
+                    
+                    @media (max-width: 768px) {
+                        .main-container {
+                            padding: 1.5rem;
+                        }
+                        
+                        .player-card {
+                            padding: 1rem;
+                        }
                     }
                 </style>
             </head>
-            <body class="bg-light">
-                <div class="container py-5">
-                    <h1 class="text-center mb-4">
-                        <i class="fas fa-users"></i> Jogadores Agrupados por Time
-                    </h1>
-                    
-                    <div class="text-center mb-4">
-                        <a href="/lista-jogadores" class="btn btn-secondary me-2">
-                            <i class="fas fa-list"></i> Ver Lista Completa
-                        </a>
-                        <a href="/" class="btn btn-outline-primary">
-                            <i class="fas fa-home"></i> Voltar ao Início
-                        </a>
-                    </div>
-                    
-                    ${timesOrdenados.length > 0 ? `
-                        ${timesOrdenados.map(time => `
-                            <div class="time-header">
-                                <i class="fas fa-users me-2"></i>${time}
-                                <span class="badge bg-primary float-end">${jogadoresPorTime[time].length} jogador(es)</span>
-                            </div>
-                            
-                            ${jogadoresPorTime[time].map(jogador => `
-                                <div class="jogador-card row">
-                                    <div class="col-md-4">
-                                        <strong><i class="fas fa-user me-2"></i>${jogador.nome}</strong>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <span class="badge badge-numero text-white me-2">Nº ${jogador.numero}</span>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <span class="badge badge-posicao text-white">${jogador.posicao}</span>
-                                    </div>
-                                    <div class="col-md-3 text-end">
-                                        <a href="/editar-jogador/${jogador.id}" class="btn btn-sm btn-warning me-1">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                        <button class="btn btn-sm btn-danger" onclick="excluirJogador(${jogador.id})">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            `).join('')}
-                        `).join('')}
-                    ` : `
-                        <div class="alert alert-info text-center">
-                            <i class="fas fa-info-circle fa-2x mb-3"></i>
-                            <h4>Nenhum jogador cadastrado ainda!</h4>
-                            <a href="/cadastro-jogador" class="btn btn-primary mt-3">
-                                <i class="fas fa-user-plus"></i> Cadastrar Primeiro Jogador
+            <body>
+                <div class="container py-4">
+                    <div class="main-container">
+                        <h1 class="title-section">
+                            <i class="fas fa-layer-group me-2"></i>Jogadores por Time
+                        </h1>
+                        
+                        <div class="text-center mb-3">
+                            <a href="/lista-jogadores" class="btn btn-view">
+                                <i class="fas fa-list me-2"></i>Ver Lista Completa
+                            </a>
+                            <a href="/" class="btn btn-view">
+                                <i class="fas fa-home me-2"></i>Voltar ao Início
                             </a>
                         </div>
-                    `}
+                        
+                        ${timesOrdenados.length > 0 ? `
+                            ${timesOrdenados.map(time => `
+                                <div class="team-header">
+                                    <div>
+                                        <i class="fas fa-users me-2"></i>${time}
+                                    </div>
+                                    <span class="badge-count">${jogadoresPorTime[time].length} jogador(es)</span>
+                                </div>
+                                
+                                <div class="row">
+                                    ${jogadoresPorTime[time].map(jogador => `
+                                    <div class="col-md-6 col-lg-4">
+                                        <div class="player-card">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <div class="player-name">
+                                                    <i class="fas fa-user me-2"></i>${jogador.nome}
+                                                </div>
+                                                <span class="badge-numero">Nº ${jogador.numero}</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <span class="badge-posicao">${jogador.posicao}</span>
+                                                <div>
+                                                    <a href="/editar-jogador/${jogador.id}" class="btn btn-warning btn-action" title="Editar">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    <button class="btn btn-danger btn-action" onclick="excluirJogador(${jogador.id})" title="Excluir">
+                                                        <i class="fas fa-trash-alt"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    `).join('')}
+                                </div>
+                            `).join('')}
+                        ` : `
+                        <div class="empty-state">
+                            <div class="mb-4" style="font-size: 4rem; color: var(--accent);">
+                                <i class="fas fa-user-slash"></i>
+                            </div>
+                            <h3 class="mb-3 fw-bold">Nenhum jogador cadastrado</h3>
+                            <p class="mb-4 text-muted">Comece cadastrando o primeiro jogador do campeonato</p>
+                            <a href="/cadastro-jogador" class="btn btn-premium">
+                                <i class="fas fa-user-plus me-2"></i>Cadastrar Jogador
+                            </a>
+                        </div>
+                        `}
+                    </div>
                 </div>
 
+                <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"></script>
                 <script>
                     function excluirJogador(id) {
                         if (confirm('Tem certeza que deseja excluir este jogador?')) {
